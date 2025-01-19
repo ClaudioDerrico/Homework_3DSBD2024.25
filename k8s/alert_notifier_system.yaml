@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-notifier-system-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-notifier-system
+  template:
+    metadata:
+      labels:
+        app: alert-notifier-system
+    spec:
+      containers:
+      - name: alert-notifier-system
+        image: fabio0027/hw3:alert_notifier_systemv1.0
+        ports:
+        - containerPort: 8002
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-service:9092"  
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-notifier-system-service
+spec:
+  selector:
+    app: alert-notifier-system
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002

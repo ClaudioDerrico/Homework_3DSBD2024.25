@@ -1,0 +1,132 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    environment:
+      - ZOOKEEPER_CLIENT_PORT:2181
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    restart: always
+
+  kafka:
+    image: bitnami/kafka:latest
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LOG4J_LOGGERS: "kafka.controller.KafkaController=INFO"
+    ports:
+      - "9092:9092"
+    restart: always
+
+  database:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: Hw1
+      POSTGRES_PASSWORD: 123ciao
+      POSTGRES_DB: Hw1DB
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  data_cleaner:
+    build:
+      context: .
+      dockerfile: ./cleaner/Dockerfile
+    depends_on:
+      - database
+    environment:
+      - DATABASE_URL=postgresql://Hw1:123ciao@database:5432/Hw1DB
+    restart: always 
+
+  server:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    ports:
+      - "50051:50051"
+      - "8000:8000" 
+    depends_on:
+      - database
+    environment:
+      - DATABASE_URL=postgresql://Hw1:123ciao@database:5432/Hw1DB
+    restart: always
+
+  data_collector:
+    build:
+      context: .
+      dockerfile: ./data_collector/Dockerfile
+    depends_on:
+      - database
+      - kafka
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://Hw1:123ciao@database:5432/Hw1DB
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    restart: always
+
+  alert_system:
+    build:
+      context: .
+      dockerfile: ./alert_system/Dockerfile
+    depends_on:
+      - database
+      - kafka
+    environment:
+      - DATABASE_URL=postgresql://Hw1:123ciao@database:5432/Hw1DB
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    restart: always
+
+  alert_notifier_system:
+    build:
+      context: .
+      dockerfile: ./alert_notifier_system/Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    ports:
+      - "8002:8002"
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    depends_on:
+      - data_collector
+      - server
+      - alert_notifier_system
+   
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:    
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    links:
+        - alertmanager:alertmanager
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    deploy:
+      mode: global
+
+
+volumes:
+  db_data:

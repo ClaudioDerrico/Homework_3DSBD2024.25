@@ -1,0 +1,4 @@
+yfinance
+SQLAlchemy
+psycopg2-binary
+cachetools

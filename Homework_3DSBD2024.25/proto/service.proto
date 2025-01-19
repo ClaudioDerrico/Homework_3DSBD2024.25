@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package user_service;
+
+service UserCommandService {
+    rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
+    rpc LoginUser (LoginUserRequest) returns (LoginUserResponse); 
+
+    rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+service UserQueryService {
+    rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueResponse);
+    rpc GetAverageValue (GetAverageValueRequest) returns (GetAverageValueResponse);
+}
+
+message LoginUserRequest {
+    string email = 1;
+}
+
+message LoginUserResponse {
+    string message = 1;
+    bool success = 2;
+}
+
+message RegisterUserRequest {
+    string email = 1;
+    string ticker = 2;
+    string request_id = 3;
+    double high_value = 4; 
+    double low_value = 5;  
+}
+
+message RegisterUserResponse {
+    string message = 1;
+}
+
+message UpdateUserRequest {
+    string email = 1;
+    string ticker = 2;
+    string request_id = 3;
+    double high_value = 4; 
+    double low_value = 5;  
+}
+
+message UpdateUserResponse {
+    string message = 1;
+}
+
+message DeleteUserRequest {
+    string email = 1;
+    string request_id = 2;
+}
+
+message DeleteUserResponse {
+    string message = 1;
+}
+
+message GetLatestValueRequest {
+    string email = 1;
+}
+
+message GetLatestValueResponse {
+    string email = 1;
+    string ticker = 2;
+    double value = 3;
+    string timestamp = 4;
+}
+
+message GetAverageValueRequest {
+    string email = 1;
+    int32 count = 2;
+}
+
+message GetAverageValueResponse {
+    string email = 1;
+    string ticker = 2;
+    double average_value = 3;
+}

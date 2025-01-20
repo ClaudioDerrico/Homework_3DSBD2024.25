@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cleaner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cleaner
+  template:
+    metadata:
+      labels:
+        app: cleaner
+    spec:
+      containers:
+      - name: cleaner
+        image: fabio0027/hw3:data_cleanerv1.0
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://Hw1:123ciao@database:5432/Hw1DB"
+
